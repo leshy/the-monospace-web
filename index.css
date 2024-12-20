@@ -1,18 +1,97 @@
-@import url('https://fonts.cdnfonts.com/css/jetbrains-mono-2');
+a:has(> img) {
+  position: relative;
+  display: inline-block; /* Establish stacking context for ::before */
+}
 
-:root {
+a:has(> img)::before {
+  content: "RUN";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  background: black;
+  text-align: center;
+  font-size: 2rem;
+  width: 33%;
+  padding: calc((var(--line-height) / 2))
+    calc(1ch - var(--border-thickness) / 2)
+    calc((var(--line-height) / 2) - (var(--border-thickness)));
+  border: var(--border-thickness) solid var(--text-color);
+
+  z-index: 1; /* Ensure pseudo-element is above the image */
+  opacity: 0;
+  pointer-events: none;
+}
+a:hover:has(> img)::before {
+  opacity: 1;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  src:
+    local("JetBrains Mono"),
+    url("fonts/jetbrains/JetBrainsMonoMedium.woff") format("woff");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 500;
+  src:
+    local("JetBrains Mono"),
+    url("fonts/jetbrains/JetBrainsMonoMediumItalic.woff") format("woff");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 600;
+  src:
+    local("JetBrains Mono"),
+    url("fonts/jetbrains/JetBrainsMonoSemiBold.woff") format("woff");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 600;
+  src:
+    local("JetBrains Mono"),
+    url("fonts/jetbrains/JetBrainsMonoSemiBoldItalic.woff") format("woff");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 800;
+  src:
+    local("JetBrains Mono"),
+    url("fonts/jetbrains/JetBrainsMonoExtraBold.woff") format("woff");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 800;
+  src:
+    local("JetBrains Mono"),
+    url("fonts/jetbrains/JetBrainsMonoExtraBoldItalic.woff") format("woff");
+}
+
+:root,
+svg {
   --font-family: "JetBrains Mono", monospace;
-  --line-height: 1.20rem;
+  --line-height: 1.2rem;
   --border-thickness: 2px;
-  --text-color: #000;
-  --text-color-alt: #666;
-  --background-color: #fff;
-  --background-color-alt: #eee;
+  --text-color: #fff;
+  --text-color-alt: #aaa;
+  --text-color-p: #ccc;
+  --background-color: #000;
+  --background-color-alt: #111;
 
   --font-weight-normal: 500;
   --font-weight-medium: 600;
   --font-weight-bold: 800;
 
+  fill: var(--text-color);
   font-family: var(--font-family);
   font-optical-sizing: auto;
   font-weight: var(--font-weight-normal);
@@ -21,19 +100,27 @@
   font-size: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --text-color: #fff;
-    --text-color-alt: #aaa;
-    --background-color: #000;
-    --background-color-alt: #111;
+    --text-color: #000;
+    --text-color-alt: #666;
+    --text-color-p: #333;
+    --background-color: #fff;
+    --background-color-alt: #eee;
+  }
+
+  svg {
+    filter: invert(1);
+  }
+
+  img[src*="schematic-"] {
+    filter: invert(100%);
   }
 }
 
 * {
   box-sizing: border-box;
 }
-
 
 * + * {
   margin-top: var(--line-height);
@@ -61,15 +148,26 @@ body {
 }
 
 @media screen and (max-width: 480px) {
-  :root {
+  :root,
+  svg {
     font-size: 14px;
   }
+
+  svg text {
+    margin: var(--line-height) 1ch;
+  }
+
   body {
     padding: var(--line-height) 1ch;
   }
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: var(--font-weight-bold);
   margin: calc(var(--line-height) * 2) 0 var(--line-height);
   line-height: var(--line-height);
@@ -81,6 +179,7 @@ h1 {
   margin-bottom: calc(var(--line-height) * 2);
   text-transform: uppercase;
 }
+
 h2 {
   font-size: 1rem;
   text-transform: uppercase;
@@ -109,7 +208,8 @@ a {
   text-decoration-thickness: var(--border-thickness);
 }
 
-a:link, a:visited {
+a:link,
+a:visited {
   color: var(--text-color);
 }
 
@@ -131,7 +231,7 @@ sub {
   vertical-align: sub;
   line-height: 0;
   width: calc(1ch / 0.75);
-  font-size: .75rem;
+  font-size: 0.75rem;
 }
 
 table {
@@ -142,13 +242,12 @@ table {
   margin: 0 0 calc(var(--line-height) * 2);
 }
 
-th, td {
+th,
+td {
   border: var(--border-thickness) solid var(--text-color);
-  padding: 
-    calc((var(--line-height) / 2))
+  padding: calc((var(--line-height) / 2))
     calc(1ch - var(--border-thickness) / 2)
-    calc((var(--line-height) / 2) - (var(--border-thickness)))
-  ;
+    calc((var(--line-height) / 2) - (var(--border-thickness)));
   line-height: var(--line-height);
   vertical-align: top;
   text-align: left;
@@ -156,7 +255,6 @@ th, td {
 table tbody tr:first-child > * {
   padding-top: calc((var(--line-height) / 2) - var(--border-thickness));
 }
-
 
 th {
   font-weight: 700;
@@ -184,7 +282,8 @@ p {
   hyphens: auto;
 }
 
-img, video {
+img,
+video {
   display: block;
   width: 100%;
   object-fit: contain;
@@ -211,11 +310,11 @@ details[open] summary {
 
 details ::marker {
   display: inline-block;
-  content: '▶';
+  content: "▶";
   margin: 0;
 }
 details[open] ::marker {
-  content: '▼';
+  content: "▼";
 }
 
 details :last-child {
@@ -232,12 +331,9 @@ figure pre {
   margin: 0;
 }
 
-pre, code {
-  font-family: var(--font-family);
-}
-
+pre,
 code {
-  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
 }
 
 figure {
@@ -252,7 +348,8 @@ figcaption {
   margin-top: var(--line-height);
 }
 
-ul, ol {
+ul,
+ol {
   padding: 0;
   margin: 0 0 var(--line-height);
 }
@@ -273,7 +370,7 @@ ul ul {
   padding: 0 0 0 3ch;
   margin: 0;
 }
-ol li:before { 
+ol li:before {
   content: counters(item, ".") ". ";
   counter-increment: item;
   font-weight: var(--font-weight-medium);
@@ -289,13 +386,14 @@ li::marker {
 }
 
 ::-webkit-scrollbar {
-    height: var(--line-height);
+  height: var(--line-height);
 }
 
-input, button, textarea {
+input,
+button,
+textarea {
   border: var(--border-thickness) solid var(--text-color);
-  padding: 
-    calc(var(--line-height) / 2 - var(--border-thickness))
+  padding: calc(var(--line-height) / 2 - var(--border-thickness))
     calc(1ch - var(--border-thickness));
   margin: 0;
   font: inherit;
@@ -311,7 +409,7 @@ input, button, textarea {
   -webkit-appearance: none;
 }
 
-input[type=checkbox] {
+input[type="checkbox"] {
   display: inline-grid;
   place-content: center;
   vertical-align: top;
@@ -319,14 +417,15 @@ input[type=checkbox] {
   height: var(--line-height);
   cursor: pointer;
 }
-input[type=checkbox]:checked:before {
+input[type="checkbox"]:checked:before {
   content: "";
   width: 1ch;
   height: calc(var(--line-height) / 2);
   background: var(--text-color);
 }
 
-button:focus, input:focus {
+button:focus,
+input:focus {
   --border-thickness: 3px;
   outline: none;
 }
@@ -343,7 +442,7 @@ input {
 }
 button::-moz-focus-inner {
   padding: 0;
-  border: 0
+  border: 0;
 }
 
 button {
@@ -372,7 +471,8 @@ label input {
   width: 100%;
 }
 
-.tree, .tree ul {
+.tree,
+.tree ul {
   position: relative;
   padding-left: 0;
   list-style-type: none;
@@ -408,41 +508,81 @@ label input {
   height: calc(var(--line-height) / 2);
   border-left: var(--border-thickness) solid var(--text-color);
 }
+section.level1 {
+  display: contents;
+}
+
+section.level1 > *:not(section.level2) {
+  width: 100%;
+}
 
 .grid {
   --grid-cells: 0;
   display: flex;
   gap: 1ch;
-  width: calc(round(down, 100%, (1ch * var(--grid-cells)) - (1ch * var(--grid-cells) - 1)));
+  width: calc(
+    round(down, 100%, (1ch * var(--grid-cells)) - (1ch * var(--grid-cells) - 1))
+  );
   margin-bottom: var(--line-height);
 }
 
 .grid > *,
 .grid > input {
-  flex: 0 0 calc(round(down, (100% - (1ch * (var(--grid-cells) - 1))) / var(--grid-cells), 1ch));
+  flex: 0 0
+    calc(
+      round(
+        down,
+        (100% - (1ch * (var(--grid-cells) - 1))) / var(--grid-cells),
+        1ch
+      )
+    );
 }
-.grid:has(> :last-child:nth-child(1)) { --grid-cells: 1; }
-.grid:has(> :last-child:nth-child(2)) { --grid-cells: 2; }
-.grid:has(> :last-child:nth-child(3)) { --grid-cells: 3; }
-.grid:has(> :last-child:nth-child(4)) { --grid-cells: 4; }
-.grid:has(> :last-child:nth-child(5)) { --grid-cells: 5; }
-.grid:has(> :last-child:nth-child(6)) { --grid-cells: 6; }
-.grid:has(> :last-child:nth-child(7)) { --grid-cells: 7; }
-.grid:has(> :last-child:nth-child(8)) { --grid-cells: 8; }
-.grid:has(> :last-child:nth-child(9)) { --grid-cells: 9; }
+.grid:has(> :last-child:nth-child(1)) {
+  --grid-cells: 1;
+}
+.grid:has(> :last-child:nth-child(2)) {
+  --grid-cells: 2;
+}
+.grid:has(> :last-child:nth-child(3)) {
+  --grid-cells: 3;
+}
+.grid:has(> :last-child:nth-child(4)) {
+  --grid-cells: 4;
+}
+.grid:has(> :last-child:nth-child(5)) {
+  --grid-cells: 5;
+}
+.grid:has(> :last-child:nth-child(6)) {
+  --grid-cells: 6;
+}
+.grid:has(> :last-child:nth-child(7)) {
+  --grid-cells: 7;
+}
+.grid:has(> :last-child:nth-child(8)) {
+  --grid-cells: 8;
+}
+.grid:has(> :last-child:nth-child(9)) {
+  --grid-cells: 9;
+}
 
 /* DEBUG UTILITIES */
 
 .debug .debug-grid {
-  --color: color-mix(in srgb, var(--text-color) 10%, var(--background-color) 90%);
+  --color: color-mix(
+    in srgb,
+    var(--text-color) 33%,
+    var(--background-color) 90%
+  );
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: -1;
-  background-image:
-    repeating-linear-gradient(var(--color) 0 1px, transparent 1px 100%),
+  background-image: repeating-linear-gradient(
+      var(--color) 0 1px,
+      transparent 1px 100%
+    ),
     repeating-linear-gradient(90deg, var(--color) 0 1px, transparent 1px 100%);
   background-size: 1ch var(--line-height);
   margin: 0;
@@ -454,4 +594,111 @@ label input {
 
 .debug-toggle-label {
   text-align: right;
+}
+
+pre > code.sourceCode > span > a:first-child::before {
+  text-decoration: underline;
+}
+
+code {
+  font-weight: var(--font-weight-normal);
+  color: var(--text-color-alt);
+}
+
+code span.al {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+} /* Alert */
+code span.an {
+  font-style: italic;
+} /* Annotation */
+code span.cf {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+} /* ControlFlow */
+code span.co {
+  font-style: italic;
+} /* Comment */
+code span.cv {
+  font-style: italic;
+} /* CommentVar */
+code span.do {
+  font-style: italic;
+} /* Documentation */
+code span.dt {
+  text-decoration: underline;
+} /* DataType */
+code span.er {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+} /* Error */
+code span.in {
+  font-style: italic;
+} /* Information */
+code span.kw {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+} /* Keyword */
+code span.pp {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+} /* Preprocessor */
+code span.at {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+} /* idk */
+code span.wa {
+  font-style: italic;
+} /* Warning */
+
+/* /\* Make level1 flex container when it has multiple level2 children *\/ */
+/* section.level1:has(> section.level2 ~ section.level2) { */
+/*   display: flex; */
+/*   flex-wrap: wrap; */
+/*   column-gap: var(--line-height); */
+/* } */
+
+/* /\* Keep non-section content full width *\/ */
+/* section.level1 > :not(section) { */
+/*   width: 100%; */
+/* } */
+
+/* /\* Make level2 sections split width *\/ */
+/* section.level1:has(> section.level2 ~ section.level2) > section.level2 { */
+/*   flex: 1 1 45%; */
+/*   min-width: 300px; */
+/* } */
+
+section.level1:has(> section.level2 ~ section.level2) {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--line-height);
+  /* border: 2px solid red; */
+  /* box-sizing: border-box; */
+}
+
+section.level1 > :not(section) {
+  width: 100%;
+}
+
+section.level1:has(> section.level2 ~ section.level2) > section.level2 {
+  flex: 1 1 45%;
+  min-width: 300px;
+  /* border: 2px solid blue; */
+  /* box-sizing: border-box; */
+  margin-top: 0; /* Override the * + * margin */
+}
+
+#TOC {
+  position: relative;
+  top: calc(var(--line-height) * -2);
+  margin-bottom: calc(var(--line-height) * -2);
+}
+
+#TOC a {
+  text-decoration: none;
+}
+
+#TOC a:hover {
+  text-decoration: underline;
 }
