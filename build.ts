@@ -1,14 +1,21 @@
-import { parse } from "https://deno.land/std/flags/mod.ts";
-import { walk } from "https://deno.land/std/fs/mod.ts";
-import * as path from "https://deno.land/std/path/mod.ts";
+import { green } from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import { parse } from "https://deno.land/std@0.224.0/flags/mod.ts";
+import { walk } from "https://deno.land/std@0.224.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
+import PQueue from "https://deno.land/x/p_queue@1.0.1/mod.ts";
+
+const queue = new PQueue({
+    concurrency: 10,
+});
 
 const SRC_DIR = "site";
 const DEST_DIR = "site";
 
 async function buildFile(file: string) {
-    console.log("BUILD", file);
+    console.log(green("build"), file);
     const destPath = file.replace(SRC_DIR, DEST_DIR).replace(".org", ".html");
     await Deno.mkdir(path.dirname(destPath), { recursive: true });
+    const templatePath = path.join(Deno.cwd(), "template.html");
     const cmd = new Deno.Command("pandoc", {
         args: [
             "--toc",
@@ -24,35 +31,48 @@ async function buildFile(file: string) {
             file,
             "-o",
             destPath,
-            "--template=template.html",
+            `--template=${templatePath}`,
             "--verbose",
         ],
     });
-    await cmd.output();
+    const decoder = new TextDecoder();
+    const output = await cmd.output();
+    if (output.code != 0) {
+        throw new Error(
+            decoder.decode(output.stdout) +
+                "\n" +
+                decoder.decode(output.stderr),
+        );
+    }
 }
 
 async function buildAll() {
     for await (const entry of walk(SRC_DIR, { exts: [".org"] })) {
-        await buildFile(entry.path);
+        queue.add(() => buildFile(entry.path));
     }
 }
 
 async function watch() {
+    console.log(green("watching"));
     const watcher = Deno.watchFs(SRC_DIR);
     for await (const event of watcher) {
         for (const file of event.paths) {
             if (file.endsWith(".org") && event.kind === "modify") {
-                await buildFile(file);
+                queue.add(() => buildFile(file));
             }
         }
     }
 }
+const getStaticMethods = (cls: any) =>
+    Object.getOwnPropertyNames(cls).filter(
+        (prop) => typeof cls[prop] === "function",
+    );
 
 if (import.meta.main) {
     const args = parse(Deno.args);
 
     await buildAll();
     if (args.watch) {
-        await watch();
+        queue.add(() => watch());
     }
 }
