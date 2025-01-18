@@ -26,6 +26,7 @@
             packages = [
               pkgs.live-server
               pkgs.pandoc
+              pkgs.deno
             ];
           };
         }

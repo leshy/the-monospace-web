@@ -1,10 +1,7 @@
+.PHONY: build watch
 
-all: index.html
+build:
+	deno run --allow-read --allow-write --allow-run build.ts
 
-clean:
-	rm -f index.html
-
-index.html: index.md template.html Makefile
-	pandoc --toc -s --css reset.css --css index.css -i $< -o $@ --template=template.html
-
-.PHONY: all clean
+watch:
+	deno run --allow-read --allow-write --allow-run build.ts --watch
