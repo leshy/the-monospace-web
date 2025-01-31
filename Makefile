@@ -1,6 +1,6 @@
 MAKEFLAGS += --no-print-directory
 
-CONTENT_DIR := content
+CONTENT_DIR ?= content
 WEB_DIR := web
 STATIC_DIR := static
 TEMPLATE := pandoc/template.html
