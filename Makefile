@@ -1,19 +1,23 @@
 MAKEFLAGS += --no-print-directory
+
 CONTENT_DIR := content
 WEB_DIR := web
 STATIC_DIR := static
 TEMPLATE := pandoc/template.html
 LUA_FILTER := pandoc/lua/code-block.lua
 
-ORGFILES := $(shell find $(CONTENT_DIR) -type f -name "*.org")
+ORGFILES := $(shell find $(CONTENT_DIR) -type f -name "*.org" -not -path '*/.*')
 HTMLFILES := $(patsubst $(CONTENT_DIR)/%.org,$(WEB_DIR)/%.html,$(ORGFILES))
 
 STATICFILES := $(shell find $(STATIC_DIR) -type f -not -path '*/.*')
 STATICDEST := $(patsubst $(STATIC_DIR)/%,$(WEB_DIR)/%,$(STATICFILES))
 
+CONTENTASSETS := $(shell find $(CONTENT_DIR) -type f -not -name "*.org" -not -path '*/.*')
+ASSETSDEST := $(patsubst $(CONTENT_DIR)/%,$(WEB_DIR)/%,$(CONTENTASSETS))
+
 .PHONY: all clean watch
 
-all: $(HTMLFILES) $(STATICDEST)
+all: $(HTMLFILES) $(STATICDEST) $(ASSETSDEST)
 
 $(WEB_DIR)/%.html: $(CONTENT_DIR)/%.org
 	@mkdir -p $(@D)
@@ -33,7 +37,12 @@ $(WEB_DIR)/%.html: $(CONTENT_DIR)/%.org
 $(WEB_DIR)/%: $(STATIC_DIR)/%
 	@mkdir -p $(@D)
 	@cp $< $@
-	@echo "Copied $<"
+	@echo "Copied static $<"
+
+$(WEB_DIR)/%: $(CONTENT_DIR)/%
+	@mkdir -p $(@D)
+	@cp "$<" "$@"
+	@echo "Copied asset $<"
 
 clean:
 	rm -rf $(WEB_DIR)
@@ -41,6 +50,6 @@ clean:
 watch:
 	@echo "Watching for changes. Press Ctrl+C to stop."
 	@while true; do \
-		make all; \
+		$(MAKE) all; \
 		inotifywait -qre modify,create,delete $(CONTENT_DIR) $(STATIC_DIR); \
 	done
