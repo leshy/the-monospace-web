@@ -4,30 +4,24 @@ import { walk } from "https://deno.land/std@0.224.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 import PQueue from "https://deno.land/x/p_queue@1.0.1/mod.ts";
 
-const SRC_DIR = "site";
-const DEST_DIR = "site";
-
-async function buildFile(file: string, usebar: boolean = false) {
-    //console.log(green("build"), file);
-
-    const destPath = file.replace(SRC_DIR, DEST_DIR).replace(".org", ".html");
-    await Deno.mkdir(path.dirname(destPath), { recursive: true });
-    const templatePath = path.join(Deno.cwd(), "template.html");
+async function buildOrg(srcPath: string, dstPath: string) {
+    await Deno.mkdir(path.dirname(dstPath), { recursive: true });
+    const templatePath = path.join(Deno.cwd(), "pandoc/template.html");
     const cmd = new Deno.Command("pandoc", {
         args: [
             "--toc",
             "--toc-depth=2",
             "-s",
             "--section-divs=true",
-            "--lua-filter=code-block.lua",
+            "--lua-filter=pandoc/lua/code-block.lua",
             "--css",
             "reset.css",
             "--css",
             "index.css",
             "-i",
-            file,
+            srcPath,
             "-o",
-            destPath,
+            dstPath,
             `--template=${templatePath}`,
             "--verbose",
         ],
@@ -41,25 +35,38 @@ async function buildFile(file: string, usebar: boolean = false) {
                 decoder.decode(output.stderr),
         );
     }
-    console.log(green("build"), file);
+    console.log(green("build"), srcPath, green("➞"), dstPath);
 }
 
-async function buildAll() {
+async function buildAll(srcDir: string, dstDir: string) {
     const queue = new PQueue({
         concurrency: 10,
     });
-    for await (const entry of walk(SRC_DIR, { exts: [".org"] })) {
-        queue.add(() => buildFile(entry.path, true));
+
+    for await (const entry of walk(srcDir, { exts: [".org"] })) {
+        queue.add(() =>
+            buildOrg(
+                entry.path,
+                entry.path.replace(srcDir, dstDir).replace(".org", ".html"),
+            )
+        );
     }
+
     await queue.onIdle();
 }
 
-async function watch() {
-    const watcher = Deno.watchFs(SRC_DIR);
+async function watch(srcDir: string, dstDir: string) {
+    const watcher = Deno.watchFs(srcDir);
+
     for await (const event of watcher) {
         for (const file of event.paths) {
             if (file.endsWith(".org") && event.kind === "modify") {
-                buildFile(file);
+                const cwd = Deno.cwd();
+                const rfile = file.replace(cwd + "/", "");
+                buildOrg(
+                    rfile,
+                    rfile.replace(srcDir, dstDir).replace(".org", ".html"),
+                );
             }
         }
     }
@@ -67,10 +74,19 @@ async function watch() {
 
 if (import.meta.main) {
     const args = parse(Deno.args);
+    const srcDir = args.src;
+    const dstDir = args.dst || srcDir;
 
-    await buildAll();
+    console.log(
+        green("starting a recursive build"),
+        srcDir,
+        green("➞"),
+        dstDir,
+    );
+    await buildAll(srcDir, dstDir);
+
     if (args.watch) {
-        console.log("watching...");
-        watch();
-    }
+        console.log(green("watching..."));
+        watch(srcDir, dstDir);
+    } else console.log(green("build complete"));
 }
